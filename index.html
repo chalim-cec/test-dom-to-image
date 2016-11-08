@@ -55,7 +55,7 @@
     });
     
     $("#save_btn3").click(function() { 
-        domtoimage.toJpeg(document.getElementById('area'), { bgcolor: #ffffff })
+        domtoimage.toJpeg(document.getElementById('area'), { bgcolor: "#ffffff" })
             .then(function (dataUrl) {
                 var link = document.createElement('a');
                 link.download = 'domtojpg.jpeg';
