@@ -23,6 +23,9 @@
     <button type="button" id="save_btn3">dom-to-image to jpg</button>
     <button type="button" id="save_btn4">html2canvas airdummingfool fix</button>
     
+    <div id="area2" style="width:400px;height:400px;border:3px solid #000;">
+    </div>
+    
     </body>
 </html>
 
@@ -65,39 +68,47 @@
     });
     
     $("#save_btn4").click(function() { 
-          var src = document.getElementById("area");
-          var img = document.getElementById("area");
-          takeHighResScreenshot(src, img, 2);
+        var src = document.getElementById("area");
+        var img = document.getElementById("area2");
+        makeHighResScreenshot(src, img, 192); // DPI of 192 is 4x resolution (2x normal DPI for both width and height)
     });
     
-    function takeHighResScreenshot(srcEl, destIMG, scaleFactor) {
-    // Save original size of element
-    var originalWidth = srcEl.offsetWidth;
-    var originalHeight = srcEl.offsetHeight;
-    // Force px size (no %, EMs, etc)
-    srcEl.style.width = originalWidth + "px";
-    srcEl.style.height = originalHeight + "px";
+    var makeHighResScreenshot = function(srcEl, destIMG, dpi) {
+        var scaleFactor = Math.floor(dpi / 96);
+        // Save original size of element
+        var originalWidth = srcEl.offsetWidth;
+        var originalHeight = srcEl.offsetHeight;
+        // Save original document size
+        var originalBodyWidth = document.body.offsetWidth;
+        var originalBodyHeight = document.body.offsetHeight;
 
-    // Position the element at the top left of the document because of bugs in html2canvas. The bug exists when supplying a custom canvas, and offsets the rendering on the custom canvas based on the offset of the source element on the page; thus the source element MUST be at 0, 0.
-    // See html2canvas issues #790, #820, #893, #922
-    srcEl.style.position = "absolute";
-    srcEl.style.top = "0";
-    srcEl.style.left = "0";
+        // Add style: transform: scale() to srcEl
+        srcEl.style.transform = "scale(" + scaleFactor + ", " + scaleFactor + ")";
+        srcEl.style.transformOrigin = "left top";
 
-    // Create scaled canvas
-    var scaledCanvas = document.createElement("canvas");
-    scaledCanvas.width = originalWidth * scaleFactor;
-    scaledCanvas.height = originalHeight * scaleFactor;
-    scaledCanvas.style.width = originalWidth + "px";
-    scaledCanvas.style.height = originalHeight + "px";
-    var scaledContext = scaledCanvas.getContext("2d");
-    scaledContext.scale(scaleFactor, scaleFactor);
+        // create wrapper for srcEl to add hardcoded height/width
+        var srcElWrapper = document.createElement('div');
+        srcElWrapper.id = srcEl.id + '-wrapper';
+        srcElWrapper.style.height = originalHeight*scaleFactor + 'px';
+        srcElWrapper.style.width = originalWidth*scaleFactor + 'px';
+        // insert wrapper before srcEl in the DOM tree
+        srcEl.parentNode.insertBefore(srcElWrapper, srcEl);
+        // move srcEl into wrapper
+        srcElWrapper.appendChild(srcEl);
 
-    html2canvas(srcEl, { canvas: scaledCanvas })
-    .then(function(canvas) {
-        destIMG.src = canvas.toDataURL("image/png");
-        srcEl.style.display = "none";
-    });
-};
+        // Temporarily remove height/width constraints as necessary
+        document.body.style.width = originalBodyWidth*scaleFactor +"px";
+        document.body.style.height = originalBodyHeight*scaleFactor +"px";
+
+        window.scrollTo(0, 0); // html2canvas breaks when we're not at the top of the doc, see html2canvas#820
+        html2canvas(srcElWrapper, {
+            onrendered: function(canvas) {
+                destIMG.src = canvas.toDataURL("image/png");
+                canvas.toBlob(function(blob) {
+                    saveAs(blob, "html2canvas_fix."); 
+				});
+            }
+        });
+    };
     
 </script>
