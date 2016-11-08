@@ -19,6 +19,7 @@
     
     <button type="button" id="save_btn1">Save with html2canvas</button>
     <button type="button" id="save_btn2">Save with dom-to-image</button>
+    <button type="button" id="save_btn3">dom-to-image to jpg</button>
     
     
     </body>
@@ -52,6 +53,16 @@
         domtoimage.toBlob(document.getElementById('area')).then(function (blob) {
             window.saveAs(blob, 'screen.png');
         });
+    });
+    
+    $("#save_btn3").click(function() { 
+        domtoimage.toJpeg(document.getElementById('area'), { quality: 1 })
+            .then(function (dataUrl) {
+                var link = document.createElement('a');
+                link.download = 'my-image-name.jpeg';
+                link.href = dataUrl;
+                link.click();
+            });
     });
     
 </script>
